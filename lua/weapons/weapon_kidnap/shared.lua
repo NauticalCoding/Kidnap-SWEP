@@ -31,7 +31,7 @@ local HitSound = Sound( "Flesh.ImpactHard" )
 local kidnappedPly = {}
 local hasBeenKidnapped = {}
 
-local reviveTime = 5
+local reviveTime = 60
 local waitTime = 20
 
 function SWEP:Initialize()
