@@ -28,15 +28,14 @@ SWEP.Force = 3
 local SwingSound = Sound( "weapons/slam/throw.wav" )
 local HitSound = Sound( "Flesh.ImpactHard" )
 
-local kidnappedRag = {}
 local kidnappedPly = {}
+
 local kidnapUniqueTimer1 = 0
-local revivetime = 120
+local reviveTime = 5
 
 function SWEP:Initialize()
 
 	self:SetHoldType( "fist" )
-
 end
 
 function SWEP:Deploy()
@@ -69,32 +68,17 @@ local function altPickup(ply,ent)
 		ply.pickupObjectTable[2] = hookID;
        
 		hook.Add("Think",hookID,function()
-			if not ent:IsValid() then 
-				hook.Remove("Think",hookID)
+			if (ent == nil || !ent:IsValid() || ply:Health() <= 0 || !ply:GetActiveWeapon():IsValid() || ply:GetActiveWeapon():GetClass() != "weapon_kidnap" ) then
+
 				ply:SetWalkSpeed(250)
 				ply:SetRunSpeed(300)
-				return 
-			end	
-			if ply:Health() <= 0 then 
-				hook.Remove("Think",hookID)
-				ply:SetWalkSpeed(250)
-				ply:SetRunSpeed(300)
-				return 
-			end			
-			if not ply:GetActiveWeapon():IsValid() then 
-				hook.Remove("Think",hookID)
-				ply:SetWalkSpeed(250)
-				ply:SetRunSpeed(300)
-				return 
-			end	
-			if ply:GetActiveWeapon():GetClass() != "weapon_kidnap" then 
-				hook.Remove("Think",hookID)
-				ply:SetWalkSpeed(250)
-				ply:SetRunSpeed(300)
-				return 
+				hook.Remove("Think",ply.pickupObjectTable[2])
+				
+				return
 			end
-               
+			
 			local desiredPos = ply:GetShootPos() + ply:EyeAngles():Forward() * 80
+			
 			ent:GetPhysicsObject():SetVelocity((desiredPos - ent:GetPos()) * 40000)
 		end)
 	end
@@ -172,19 +156,46 @@ function SWEP:PrimaryAttack()
 
 end
 
+function SWEP:kidnaprevive(ent)
+
+	if (!ent:IsValid()) then print("INVALID ENT") return end
+	
+	local phy = ent:GetPhysicsObject()
+	phy:EnableMotion( false )
+	
+	local associatedPlayer = nil
+	
+	for k,v in pairs(kidnappedPly) do
+		
+		if (v[2] == ent) then
+		
+			associatedPlayer = v[1]
+			break
+		end
+	end
+	
+	if (associatedPlayer == nil) then print("ASSOCIATED PLAYER NOT FOUND!") return end
+	
+	ent:SetSolid(SOLID_NONE)
+	associatedPlayer:DrawViewModel(true)
+	associatedPlayer:DrawWorldModel(true)
+	associatedPlayer:Spawn()
+	associatedPlayer:SetPos(ent:GetPos())
+	associatedPlayer:SetVelocity(ent:GetPhysicsObject():GetVelocity())
+
+	ent:Remove()
+end
+
 function SWEP:kidnapPlayer(ply)
 
 	local rag = ents.Create( "prop_ragdoll" )
     if not rag:IsValid() then return end
 
 	rag:SetModel( ply:GetModel() )
-    rag:SetKeyValue( "origin", ply:GetPos().x .. " " .. ply:GetPos().y .. " " .. ply:GetPos().z )
+    rag:SetKeyValue("origin", ply:GetPos().x .. " " .. ply:GetPos().y .. " " .. ply:GetPos().z)
 	rag:SetAngles(ply:GetAngles())
-			
-	table.insert(kidnappedRag, rag)
-	table.insert(kidnappedPly, ply:SteamID())
 	
-	timer.Create("removeID"..ply:SteamID(), revivetime, 1, function() self:destroytimer(ply) end)
+	table.insert(kidnappedPly, { ply,rag })
 		
 	ply:StripWeapons()
 	ply:DrawViewModel(false)
@@ -192,71 +203,29 @@ function SWEP:kidnapPlayer(ply)
 	ply:Spectate(OBS_MODE_CHASE)
 	ply:SpectateEntity(rag)
 	
-
     rag:Spawn()
     rag:Activate()
-	
+
 	rag:GetPhysicsObject():SetVelocity(4*ply:GetVelocity())
 	
 	rag:GetPhysicsObject():SetMass(1)
 	
-    self:setrevivedelay(rag)
+    timer.Create("revivedelay" .. randString(10), reviveTime, 1, function() 
 	
-end
-
-function SWEP:destroytimer(ply)
-	if table.HasValue(kidnappedPly, ply:SteamID()) then
-		for k,v in pairs(kidnappedPly) do
-			if v == ply:SteamID() then
-				table.remove(kidnappedPly, k)
+		self:kidnaprevive(rag) 
+		
+		for k,v in pairs(kidnappedPly) do // loop through table where k = player #,v = steamID
+			if v[1] == ply then // v == ply:SteamID() ( implies that their steamID is already in there )
+				table.remove(kidnappedPly, k) // remove it
 			end
 		end
-	end
+	end)
+	
 end
 
-function SWEP:setrevivedelay(rag)
-	
-	if kidnapUniqueTimer1 > 30 then
-		kidnapUniqueTimer1 = 0
-	end
-	
-	kidnapUniqueTimer1 = kidnapUniqueTimer1 + 1
-	
-	timer.Create("revivedelay"..kidnapUniqueTimer1, revivetime, 1, function() self:kidnaprevive(rag) end)
-
-end
-
-function SWEP:kidnaprevive(ent)
-
-	if !ent then return end
-	
-	if ent.kidnappedPly then
-		if ( !ent.kidnappedPly:IsValid() ) then return end
-	
-		local phy = ent:GetPhysicsObject()
-		phy:EnableMotion(false)
-		ent:SetSolid(SOLID_NONE)
-		ent.kidnappedPly:DrawViewModel(true)
-		ent.kidnappedPly:DrawWorldModel(true)
-		ent.kidnappedPly:Spawn()
-		ent.kidnappedPly:SetPos(ent:GetPos())
-		ent.kidnappedPly:SetVelocity(ent:GetPhysicsObject():GetVelocity())
-	else 
-		return
-	end
-	
-	for k, v in pairs(kidnappedRag) do 
-		if v == ent then 
-			table.remove( kidnappedRag, k )
-		end
-	end
-	ent:Remove()
-
-end
-
-hook.Add("CanPlayerSuicide", "TESTYLITPPER", function(ply)
+hook.Add("CanPlayerSuicide", "KidnapSWEP-CanPlayerSuicide", function(ply)
 	for k,v in pairs(kidnappedPly) do
-		if v == ply:SteamID() then
+		if v[1] == ply then
 			return false
 		end
 	end
