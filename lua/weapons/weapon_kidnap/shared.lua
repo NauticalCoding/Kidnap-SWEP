@@ -181,12 +181,10 @@ function SWEP:kidnapPlayer(ply)
     rag:SetKeyValue( "origin", ply:GetPos().x .. " " .. ply:GetPos().y .. " " .. ply:GetPos().z )
 	rag:SetAngles(ply:GetAngles())
 			
-	rag.kidnappedPly = ply
 	table.insert(kidnappedRag, rag)
 	table.insert(kidnappedPly, ply:SteamID())
 	
 	timer.Create("removeID"..ply:SteamID(), revivetime, 1, function() self:destroytimer(ply) end)
-	
 		
 	ply:StripWeapons()
 	ply:DrawViewModel(false)
