@@ -1,7 +1,7 @@
-SWEP.Author = "Anarchy"
+SWEP.Author = "Anarchy&Nautical"
 SWEP.Contact = "dont@dontemailme.dont"
 SWEP.Purpose = "Kidnap faggots."
-SWEP.Instructions = "Left click to knock out | Right click to drag"
+SWEP.Instructions = "Left click to knock-out | Right click to drag"
 
 SWEP.UseHands	= true
 SWEP.DrawAmmo	= false
@@ -29,9 +29,10 @@ local SwingSound = Sound( "weapons/slam/throw.wav" )
 local HitSound = Sound( "Flesh.ImpactHard" )
 
 local kidnappedPly = {}
+local hasBeenKidnapped = {}
 
-local kidnapUniqueTimer1 = 0
 local reviveTime = 5
+local waitTime = 20
 
 function SWEP:Initialize()
 
@@ -128,7 +129,6 @@ function SWEP:PrimaryAttack()
 	self:EmitSound( SwingSound )
  
 	self:SetNextPrimaryFire( CurTime() + self.Delay )
-	self:SetNextSecondaryFire( CurTime() + self.Delay )
 	
 	--------
 	
@@ -136,19 +136,17 @@ function SWEP:PrimaryAttack()
 	
 	if !eyetrace.Entity:IsPlayer() then end
 		
-	
-	//if eyetrace.Entity:IsPlayer() then
-	//	if self.Owner:EyePos():Distance(eyetrace.Entity:GetPos()) < 80 then
-	//		self:EmitSound( HitSound )
-	//	end
-	//end
+	if eyetrace.Entity:IsPlayer() then
+		if self.Owner:EyePos():Distance(eyetrace.Entity:GetPos()) < 80 then
+			self:EmitSound( HitSound )
+		end
+	end
 
 	if (!SERVER) then return end
 	
 	if eyetrace.Entity:IsPlayer() then
 		if self.Owner:EyePos():Distance(eyetrace.Entity:GetPos()) < 80 then
 			self:kidnapPlayer(eyetrace.Entity)
-			self:EmitSound( HitSound )
 		else
 			return
 		end
@@ -188,6 +186,13 @@ end
 
 function SWEP:kidnapPlayer(ply)
 
+	for k,v in pairs(hasBeenKidnapped) do
+		if v == ply then
+			self.Owner:PrintMessage(HUD_PRINTCENTER, "This player's been kidnapped recently!")
+			return
+		end
+	end
+
 	local rag = ents.Create( "prop_ragdoll" )
     if not rag:IsValid() then return end
 
@@ -196,6 +201,7 @@ function SWEP:kidnapPlayer(ply)
 	rag:SetAngles(ply:GetAngles())
 	
 	table.insert(kidnappedPly, { ply,rag })
+	table.insert(hasBeenKidnapped, ply)
 		
 	ply:StripWeapons()
 	ply:DrawViewModel(false)
@@ -217,6 +223,15 @@ function SWEP:kidnapPlayer(ply)
 		for k,v in pairs(kidnappedPly) do // loop through table where k = player #,v = steamID
 			if v[1] == ply then // v == ply:SteamID() ( implies that their steamID is already in there )
 				table.remove(kidnappedPly, k) // remove it
+			end
+		end
+	end)
+	
+	timer.Create("waittime" .. randString(10), waitTime, 1, function()
+	
+		for k,v in pairs(hasBeenKidnapped) do
+			if v == ply then
+				table.remove(hasBeenKidnapped, k)
 			end
 		end
 	end)
