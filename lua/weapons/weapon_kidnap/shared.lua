@@ -33,7 +33,7 @@ local hasBeenKidnapped = {}
 
 local reviveTime = 60
 local waitTime = 20
-local clamp = 600
+local clamp = 1250
 
 function SWEP:Initialize()
 
@@ -90,7 +90,7 @@ local function altPickup(ply,ent)
 				hook.Remove("Think",ply.pickupObjectTable[2])	
 			end
 			
-			local vel = difference * ( difference:Length() * 10 )
+			local vel = difference * difference:Length()
 			
 			vel.x = math.Clamp(vel.x,-clamp,clamp)
 			vel.y = math.Clamp(vel.y,-clamp,clamp)
