@@ -83,7 +83,7 @@ local function altPickup(ply,ent)
 			local desiredPos = ply:GetShootPos() + ply:EyeAngles():Forward() * 80
 			local difference = desiredPos - ent:GetPos()
 			
-			if (difference:Length() > 150) then
+			if (difference:Length() > 100) then
 				
 				ply:SetWalkSpeed(250)
 				ply:SetRunSpeed(300)
