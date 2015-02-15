@@ -14,7 +14,7 @@ SWEP.WorldModel = ""
  
 SWEP.Primary.ClipSize = -1
 SWEP.Primary.DefaultClip = -1
-SWEP.Primary.Automatic = true
+SWEP.Primary.Automatic = false
 SWEP.Primary.Ammo = "none"
 
 SWEP.HitDistance = 48
@@ -31,8 +31,8 @@ local HitSound = Sound( "Flesh.ImpactHard" )
 local kidnappedPly = {}
 local hasBeenKidnapped = {}
 
-local reviveTime = 60
-local waitTime = 20
+local reviveTime = 90
+local waitTime = 120
 local clamp = 2000
 
 function SWEP:Initialize()
