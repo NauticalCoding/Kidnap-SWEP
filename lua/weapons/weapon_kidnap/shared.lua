@@ -90,7 +90,7 @@ local function altPickup(ply,ent)
 				hook.Remove("Think",ply.pickupObjectTable[2])	
 			end
 			
-			local vel = difference * ( difference:Length() * 2 )
+			local vel = difference * ( difference:Length() * 10 )
 			
 			vel.x = math.Clamp(vel.x,-clamp,clamp)
 			vel.y = math.Clamp(vel.y,-clamp,clamp)
