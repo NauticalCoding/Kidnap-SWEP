@@ -33,6 +33,7 @@ local hasBeenKidnapped = {}
 
 local reviveTime = 60
 local waitTime = 20
+local clamp = 500
 
 function SWEP:Initialize()
 
@@ -77,10 +78,25 @@ local function altPickup(ply,ent)
 				
 				return
 			end
+		
 			
 			local desiredPos = ply:GetShootPos() + ply:EyeAngles():Forward() * 80
+			local difference = desiredPos - ent:GetPos()
 			
-			ent:GetPhysicsObject():SetVelocity((desiredPos - ent:GetPos()) * 40000)
+			if (difference:Length() > 150) then
+				
+				ply:SetWalkSpeed(250)
+				ply:SetRunSpeed(300)
+				hook.Remove("Think",ply.pickupObjectTable[2])	
+			end
+			
+			local vel = difference * ( difference:Length() / 1.5 )
+			
+			vel.x = math.Clamp(vel.x,-clamp,clamp)
+			vel.y = math.Clamp(vel.y,-clamp,clamp)
+			vel.z = math.Clamp(vel.z,-clamp,clamp)
+			
+			ent:GetPhysicsObject():SetVelocity( vel )
 		end)
 	end
        
@@ -107,7 +123,7 @@ function SWEP:SecondaryAttack()
 		self.Owner:SetRunSpeed(300)
 	else
 		if ent:GetClass() == "prop_ragdoll" then
-			if self.Owner:EyePos():Distance(ent:GetPos()) < 80 then 
+			if self.Owner:EyePos():Distance(ent:GetPos()) < 125 then 
 				altPickup(self.Owner,ent)
 				self.Owner:SetWalkSpeed(75)
 				self.Owner:SetRunSpeed(125)
@@ -230,7 +246,7 @@ function SWEP:kidnapPlayer(ply)
 		
 		timer.Create("waittime" .. randString(10), waitTime, 1, function() // prevent players from being kidnapped right after they wake up
 	
-			table.remove( hasBeenKidnapped,table.KeyFromValue( ply ) )
+			table.remove( hasBeenKidnapped,table.KeyFromValue( hasBeenKidnapped,ply ) )
 		end)
 	end)
 end
