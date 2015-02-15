@@ -220,24 +220,19 @@ function SWEP:kidnapPlayer(ply)
 	
     timer.Create("revivedelay" .. randString(10), reviveTime, 1, function() 
 	
-		self:kidnaprevive(rag) 
+		self:kidnaprevive(rag)
 		
 		for k,v in pairs(kidnappedPly) do // loop through table where k = player #,v = steamID
 			if v[1] == ply then // v == ply:SteamID() ( implies that their steamID is already in there )
 				table.remove(kidnappedPly, k) // remove it
 			end
 		end
+		
+		timer.Create("waittime" .. randString(10), waitTime, 1, function() // prevent players from being kidnapped right after they wake up
+	
+			table.remove( hasBeenKidnapped,table.KeyFromValue( ply ) )
+		end)
 	end)
-	
-	timer.Create("waittime" .. randString(10), waitTime, 1, function()
-	
-		for k,v in pairs(hasBeenKidnapped) do
-			if v == ply then
-				table.remove(hasBeenKidnapped, k)
-			end
-		end
-	end)
-	
 end
 
 hook.Add("CanPlayerSuicide", "KidnapSWEP-CanPlayerSuicide", function(ply)
