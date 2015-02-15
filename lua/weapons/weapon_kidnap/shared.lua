@@ -211,6 +211,8 @@ function SWEP:kidnapPlayer(ply)
 	
     rag:Spawn()
     rag:Activate()
+	
+	rag:SetCollisionGroup(COLLISION_GROUP_WEAPON)
 
 	rag:GetPhysicsObject():SetVelocity(4*ply:GetVelocity())
 	
