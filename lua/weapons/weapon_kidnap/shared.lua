@@ -31,8 +31,8 @@ local HitSound = Sound( "Flesh.ImpactHard" )
 local kidnappedPly = {}
 local hasBeenKidnapped = {}
 
-local reviveTime = 90
-local waitTime = 120
+local reviveTime = 10
+local waitTime = 20
 local clamp = 2000
 
 function SWEP:Initialize()
@@ -174,6 +174,9 @@ function SWEP:kidnaprevive(ent)
 
 	if (!ent:IsValid()) then print("INVALID ENT") return end
 	
+	ent:SetSolid(SOLID_NONE)
+	ent:Remove()
+	
 	local phy = ent:GetPhysicsObject()
 	phy:EnableMotion( false )
 	
@@ -189,21 +192,21 @@ function SWEP:kidnaprevive(ent)
 	end
 	
 	if (associatedPlayer == nil) then print("ASSOCIATED PLAYER NOT FOUND!") return end
+	if (!associatedPlayer:IsValid()) then print("PLAYER HAS DISCONNECTED!") return end
 	
-	ent:SetSolid(SOLID_NONE)
 	associatedPlayer:DrawViewModel(true)
 	associatedPlayer:DrawWorldModel(true)
 	associatedPlayer:Spawn()
 	associatedPlayer:SetPos(ent:GetPos())
 	associatedPlayer:SetVelocity(ent:GetPhysicsObject():GetVelocity())
-
-	ent:Remove()
 end
 
 function SWEP:kidnapPlayer(ply)
 
+	local steamID = ply:SteamID()
+
 	for k,v in pairs(hasBeenKidnapped) do
-		if v == ply then
+		if v == steamID then
 			self.Owner:PrintMessage(HUD_PRINTCENTER, "This player's been kidnapped recently!")
 			return
 		end
@@ -217,7 +220,7 @@ function SWEP:kidnapPlayer(ply)
 	rag:SetAngles(ply:GetAngles())
 	
 	table.insert(kidnappedPly, { ply,rag })
-	table.insert(hasBeenKidnapped, ply)
+	table.insert(hasBeenKidnapped, steamID)
 		
 	ply:StripWeapons()
 	ply:DrawViewModel(false)
@@ -237,16 +240,16 @@ function SWEP:kidnapPlayer(ply)
     timer.Create("revivedelay" .. randString(10), reviveTime, 1, function() 
 	
 		self:kidnaprevive(rag)
-		
+			
 		for k,v in pairs(kidnappedPly) do // loop through table where k = player #,v = steamID
-			if v[1] == ply then // v == ply:SteamID() ( implies that their steamID is already in there )
+			if v[2] == rag then // v == ply:SteamID() ( implies that their steamID is already in there )
 				table.remove(kidnappedPly, k) // remove it
 			end
 		end
 		
 		timer.Create("waittime" .. randString(10), waitTime, 1, function() // prevent players from being kidnapped right after they wake up
 	
-			table.remove( hasBeenKidnapped,table.KeyFromValue( hasBeenKidnapped,ply ) )
+			table.remove( hasBeenKidnapped,table.KeyFromValue( hasBeenKidnapped,steamID ) )
 		end)
 	end)
 end
